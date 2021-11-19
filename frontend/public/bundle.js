@@ -10,10 +10,11 @@ var State = {
 
 const EventType = {
   None: 0,
-  CreateFrame: 1,
-  UpdateFrameTitle: 2,
-  SeletAFrame: 3,
-  TagUpdated: 4,
+  CreateFrame: 1, // 新创建了一个frame
+  UpdateFrameTitle: 2, // 无法实现，废弃
+  SeletAFrame: 3, // 选择了board上的一个frame
+  TagUpdated: 4, // tag被更新（实际上是metadata产生变化）
+  // 继续添加
 };
 
 class Manager {
@@ -99,24 +100,24 @@ var Config = {
 
 const { ClientID } = Config;
 
-function ContainerKey (tagName) {
+const ContainerKey = (tagName) => {
   return `${tagName}\$container`
-}
+};
 
-function TagTextKey (tagName) {
+const TagTextKey = (tagName) => {
   return `\$${tagName}`
-}
+};
 
-function UpdateTag () {}
+const UpdateTag = () => {};
 
-function GetFrameIdsByATag () {}
+const GetFrameIdsByATag = () => {};
 
-async function GetTagsByFrameId (frameId)  {
+const GetTagsByFrameId = async (frameId) => {
   const frameData = await miro.board.widgets.get({id: frameId});
   return frameData[0].metadata[ClientID]
-}
+};
 
-function Metadata (tag, containerWidgetId, valueKey, value) {
+const Metadata = (tag, containerWidgetId, valueKey, value) => {
   return {
     [ClientID]: {
       [tag.name]: valueKey,
@@ -124,7 +125,7 @@ function Metadata (tag, containerWidgetId, valueKey, value) {
       [TagTextKey(tag.name)]: value === undefined ? tag.values[valueKey] : value
     }
   }
-}
+};
 var API = {
   ContainerKey,
   TagTextKey,

@@ -2,10 +2,11 @@ import State from './state'
 
 const EventType = {
   None: 0,
-  CreateFrame: 1,
-  UpdateFrameTitle: 2,
-  SeletAFrame: 3,
-  TagUpdated: 4,
+  CreateFrame: 1, // 新创建了一个frame
+  UpdateFrameTitle: 2, // 无法实现，废弃
+  SeletAFrame: 3, // 选择了board上的一个frame
+  TagUpdated: 4, // tag被更新（实际上是metadata产生变化）
+  // 继续添加
 }
 
 class Manager {
