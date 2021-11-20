@@ -38,6 +38,7 @@ const EventType = {
   SelectFrames: 3, // 选择了board上的若干frame
   ContainerUpdated: 4, // tag container被更新
   DeleteFrame: 5, // 删除frame
+  TagsUpdated: 6
 }
 
 const Event = new Manager(EventType)

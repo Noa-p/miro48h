@@ -13,6 +13,13 @@ const initPlugin = async () => {
   State.frameTagsOn = true
   Event.init()
 
+  await miro.board.setAppData('123', 123)
+  console.log(await miro.board.getAppData('123'))
+  await miro.board.setAppData('456', {bob: 'alice'})
+  console.log(await miro.board.getAppData('456'))
+  setTimeout(async () => {
+    console.log(await miro.board.getAppData('456'))
+  },2000)
   /*
   Event.sub(Event.type.CreateFrame, async (items) => {
     for (const frame of items) {
@@ -36,11 +43,10 @@ const initPlugin = async () => {
   Event.sub(Event.type.SelectFrames, async (items) => {
     for (const frame of items) {
       console.log(frame.id)
-      console.log(await miro.board.getAppData(frame.id))
+      // console.log(await miro.board.getAppData(frame.id))
       await Action.CreateATagForAFrame(
         frame, Tags.State, 'todo'
       )
-      console.log(await miro.board.getAppData(frame.id))
     }
   })
 }

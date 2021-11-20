@@ -132,12 +132,40 @@ var Tags = {
   }
 };
 
+/*
 const SetAppData = (key, val) => {
+  console.log('set:', key, val)
   return miro.board.setAppData(key, val)
-};
+}
 
 const UpdateAppData = async (key, val) => {
-  const data = await GetAppData(key);
+  const data = await GetAppData(key)
+  console.log('update old:', data)
+  if (typeof data === 'object' && typeof val === 'object') {
+    Object.assign(data, val)
+    return SetAppData(key, data)
+  }
+  return SetAppData(key, val)
+}
+
+const GetAppData = (key) => {
+  return miro.board.getAppData(key)
+    .then(data => {
+      console.log('get:', key, data)
+      return data
+    })
+}
+*/
+
+// In Memory for debug
+const Memory = {};
+const SetAppData = (key, val) => {
+  Memory[key] = val;
+  return val
+};
+
+const UpdateAppData = (key, val) => {
+  const data = GetAppData(key);
   if (typeof data === 'object' && typeof val === 'object') {
     Object.assign(data, val);
     return SetAppData(key, data)
@@ -146,13 +174,19 @@ const UpdateAppData = async (key, val) => {
 };
 
 const GetAppData = (key) => {
-  return miro.board.getAppData(key)
+  return Memory[key]
 };
+
+const GetAllAppData = () => {
+  return Memory
+};
+
 
 var Store = {
   set: SetAppData,
   update: UpdateAppData,
-  get: GetAppData
+  get: GetAppData,
+  getall: GetAllAppData
 };
 
 const ContainerKey = (tagName) => {
@@ -163,16 +197,13 @@ const TagTextKey = (tagName) => {
   return `\$${tagName}`
 };
 
-const SetTag = (frameId, tag, containerWidgetId, valueKey, value) => {
-  return Store.set(frameId, Metadata(tag, containerWidgetId, valueKey, value))
-};
-const UpdateTag = (frameId, tag, updatedData) => {
-  // return Store.update(frameId, )
+const UpdateTag = (frameId, tag, containerWidgetId, valueKey, value) => {
+  return Store.update(frameId, Metadata(tag, containerWidgetId, valueKey, value))
 };
 
 const GetFrameIdsByATag = () => {};
 
-const GetTagsByFrameId = async (frameId) => {
+const GetTagsByFrameId = (frameId) => {
   return Store.get(frameId)
 };
 
@@ -190,15 +221,20 @@ const Metadata = (tag, containerWidgetId, valueKey, value) => {
     [TagTextKey(tag.name)]: value === undefined ? tag.values[valueKey] : value
   }
 };
+
+const GetAllData = () => {
+  return Store.getall()
+};
+
 var API = {
   ContainerKey,
   TagTextKey,
-  SetTag,
   UpdateTag,
   GetFrameIdsByATag,
   GetTagsByFrameId,
   GetFrameByFrameId,
-  Metadata
+  Metadata,
+  GetAllData
 };
 
 var MiroWrapper = {
@@ -238,14 +274,13 @@ const CreateATagForACleanFrame = async (frame, tag, valueKey) => {
     },
   });
   await frame.add(container);
-  return API.SetTag(frame.id, tag, container.id, valueKey)
+  return API.UpdateTag(frame.id, tag, container.id, valueKey)
 };
 
 const CreateATagForAFrame = async (frame, tag, initValueKey) => {
-  console.log(frame.id);
-  const tags = await miro.board.getAppData(frame.id); //await API.GetTagsByFrameId(frame.id)
+  const tags = await API.GetTagsByFrameId(frame.id);
+  console.log(tags);
   if (!tags || !tags[tag.name]) {
-    console.log(tags[tag.name]);
     return CreateATagForACleanFrame(frame, tag, initValueKey)
   }
   const containerId = tags[API.ContainerKey(tag.name)];
@@ -257,17 +292,20 @@ const CreateATagForAFrame = async (frame, tag, initValueKey) => {
   }
 };
 
-const DeleteFrame = async (frame) => {
-  const tags = await API.GetFrameByFrameId(frame.id);
-  for (const tag of tags) {
-    await miro.board.widgets.deleteById(frame.metadata[CLIENT_ID][`${tag}\$container`]);
+const DeleteATagFromAFrame = async (frame, tag) => {
+  const tags = await API.GetTagsByFrameId(frame.id);
+  const containerId = tags[API.ContainerKey(tag.name)];
+  const container = await miro.board.get({id: containerId});
+  if (container.length !== 0) {
+    await miro.board.remove(container);
   }
+  return API.UpdateTag(frame.id, tag, null, null, null)
 };
 
 var Action = {
   CreateATagForACleanFrame,
   CreateATagForAFrame,
-  DeleteFrame
+  DeleteATagFromAFrame
 };
 
 const initPlugin = async () => {
@@ -275,6 +313,13 @@ const initPlugin = async () => {
   State.frameTagsOn = true;
   Event.init();
 
+  await miro.board.setAppData('123', 123);
+  console.log(await miro.board.getAppData('123'));
+  await miro.board.setAppData('456', {bob: 'alice'});
+  console.log(await miro.board.getAppData('456'));
+  setTimeout(async () => {
+    console.log(await miro.board.getAppData('456'));
+  },2000);
   /*
   Event.sub(Event.type.CreateFrame, async (items) => {
     for (const frame of items) {
@@ -298,11 +343,10 @@ const initPlugin = async () => {
   Event.sub(Event.type.SelectFrames, async (items) => {
     for (const frame of items) {
       console.log(frame.id);
-      console.log(await miro.board.getAppData(frame.id));
+      // console.log(await miro.board.getAppData(frame.id))
       await Action.CreateATagForAFrame(
         frame, Tags.State, 'todo'
       );
-      console.log(await miro.board.getAppData(frame.id));
     }
   });
 };

@@ -1,4 +1,5 @@
 import Store from './store'
+import Event from './event'
 
 const ContainerKey = (tagName) => {
   return `${tagName}\$container`
@@ -8,16 +9,17 @@ const TagTextKey = (tagName) => {
   return `\$${tagName}`
 }
 
-const SetTag = (frameId, tag, containerWidgetId, valueKey, value) => {
-  return Store.set(frameId, Metadata(tag, containerWidgetId, valueKey, value))
-}
-const UpdateTag = (frameId, tag, updatedData) => {
-  // return Store.update(frameId, )
+const UpdateTag = (frameId, tag, containerWidgetId, valueKey, value) => {
+  return Store.update(frameId, Metadata(tag, containerWidgetId, valueKey, value))
+    .then((data) => {
+      Event.$emit(Event.type.TagsUpdated, data)
+      return data
+    })
 }
 
 const GetFrameIdsByATag = () => {}
 
-const GetTagsByFrameId = async (frameId) => {
+const GetTagsByFrameId = (frameId) => {
   return Store.get(frameId)
 }
 
@@ -35,13 +37,18 @@ const Metadata = (tag, containerWidgetId, valueKey, value) => {
     [TagTextKey(tag.name)]: value === undefined ? tag.values[valueKey] : value
   }
 }
+
+const GetAllData = () => {
+  return Store.getall()
+}
+
 export default {
   ContainerKey,
   TagTextKey,
-  SetTag,
   UpdateTag,
   GetFrameIdsByATag,
   GetTagsByFrameId,
   GetFrameByFrameId,
-  Metadata
+  Metadata,
+  GetAllData
 }
