@@ -1,11 +1,24 @@
 import Tags from './tag.def'
 import API from './api'
+import { ClientID } from './config'
 
 const CreateATagForACleanFrame = async (frame, tag, valueKey) => {
   const frameData = await miro.board.widgets.get({id: frame.id})
   const widget = await miro.board.widgets.create({
-    type: 'card', title: Tags.State.values.todo,
-    x: frameData[0].x, y: frameData[0].y
+    type: 'SHAPE', 
+    title: Tags.State.values.todo,
+    width: 200,
+    height: frameData[0].height,
+    x: frameData[0].x - frameData[0].width/2 + 100,
+    y: frameData[0].y,
+    style: {
+      backgroundColor: '#000',
+    },
+    // metadata: {
+    //   [ClientID]: {
+    //     frameId: frame.id
+    //   }
+    // }
   })
   frame.metadata = API.Metadata(tag, widget[0].id, valueKey)
   await miro.board.widgets.update(frame)
@@ -26,7 +39,15 @@ const CreateATagForAFrame = async (frame, tag, initValueKey) => {
   }
 }
 
+const DeleteFrame = async (frame) => {
+  const tags = await API.GetFrameByFrameId(frame.id)
+  for (const tag of tags) {
+    await miro.board.widgets.deleteById(frame.metadata[CLIENT_ID][`${tag}\$container`])
+  }
+}
+
 export default {
   CreateATagForACleanFrame,
-  CreateATagForAFrame
+  CreateATagForAFrame,
+  DeleteFrame
 }

@@ -1,5 +1,8 @@
 import json from '@rollup/plugin-json'
 import { terser } from 'rollup-plugin-terser'
+import * as dotenv from 'dotenv'
+
+dotenv.config()
 
 export default {
 	input: 'src/index.js',

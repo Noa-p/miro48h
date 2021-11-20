@@ -6,6 +6,7 @@ const EventType = {
   UpdateFrameTitle: 2, // 无法实现，废弃
   SeletAFrame: 3, // 选择了board上的一个frame
   TagUpdated: 4, // tag被更新（实际上是metadata产生变化）
+  DeleteFrame: 5, // 删除frame
   // 继续添加
 }
 
@@ -68,7 +69,15 @@ const EventRegister = () => {
   })
   miro.addListener('WIDGETS_TRANSFORMATION_UPDATED', m => {
   })
-  miro.addListener('WIDGETS_DELETED', m => {
+  miro.addListener('WIDGETS_DELETED', async m => {
+    const frameList = []
+    for (const delWidget of m.data) {
+      const dw = await miro.board.widgets.get({id: delWidget.id})
+      if (dw.type == "FRAME") frameList.push(dw)
+    }
+    if (frameList.length && State.frameTagsOn) {
+      Event.$emit(Event.type.DeleteFrame, frameList)
+    } 
   })
 }
 

@@ -1,6 +1,4 @@
-import Config from './config'
-
-const { ClientID } = Config
+import { ClientID } from './config'
 
 const ContainerKey = (tagName) => {
   return `${tagName}\$container`
@@ -19,6 +17,13 @@ const GetTagsByFrameId = async (frameId) => {
   return frameData[0].metadata[ClientID]
 }
 
+const GetFrameByFrameId = async (frameId) => {
+  // const frameData = await miro.board.widgets.get({id: frameId})
+  // return frameData[0]
+  const frameData = await fetch('/')
+  return frameData
+}
+
 const Metadata = (tag, containerWidgetId, valueKey, value) => {
   return {
     [ClientID]: {
@@ -34,5 +39,6 @@ export default {
   UpdateTag,
   GetFrameIdsByATag,
   GetTagsByFrameId,
+  GetFrameByFrameId,
   Metadata
 }

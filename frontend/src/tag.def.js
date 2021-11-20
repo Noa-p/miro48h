@@ -4,7 +4,8 @@ export default {
     values: {
       todo: 'todo',
       doing: 'doing',
-      done: 'done'
+      done: 'done',
+      undermodified: 'undermodified'
     }
   },
   Owner: {

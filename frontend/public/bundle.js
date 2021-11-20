@@ -14,6 +14,7 @@ const EventType = {
   UpdateFrameTitle: 2, // 无法实现，废弃
   SeletAFrame: 3, // 选择了board上的一个frame
   TagUpdated: 4, // tag被更新（实际上是metadata产生变化）
+  DeleteFrame: 5, // 删除frame
   // 继续添加
 };
 
@@ -76,7 +77,15 @@ const EventRegister = () => {
   });
   miro.addListener('WIDGETS_TRANSFORMATION_UPDATED', m => {
   });
-  miro.addListener('WIDGETS_DELETED', m => {
+  miro.addListener('WIDGETS_DELETED', async m => {
+    const frameList = [];
+    for (const delWidget of m.data) {
+      const dw = await miro.board.widgets.get({id: delWidget.id});
+      if (dw.type == "FRAME") frameList.push(dw);
+    }
+    if (frameList.length && State.frameTagsOn) {
+      Event.$emit(Event.type.DeleteFrame, frameList);
+    } 
   });
 };
 
@@ -86,7 +95,8 @@ var Tags = {
     values: {
       todo: 'todo',
       doing: 'doing',
-      done: 'done'
+      done: 'done',
+      undermodified: 'undermodified'
     }
   },
   Owner: {
@@ -94,11 +104,7 @@ var Tags = {
   }
 };
 
-var Config = {
- ClientID: '3074457367848344047'
-};
-
-const { ClientID } = Config;
+const ClientID = process.env.CLIENT_ID;
 
 const ContainerKey = (tagName) => {
   return `${tagName}\$container`
@@ -117,6 +123,13 @@ const GetTagsByFrameId = async (frameId) => {
   return frameData[0].metadata[ClientID]
 };
 
+const GetFrameByFrameId = async (frameId) => {
+  // const frameData = await miro.board.widgets.get({id: frameId})
+  // return frameData[0]
+  const frameData = await fetch('/');
+  return frameData
+};
+
 const Metadata = (tag, containerWidgetId, valueKey, value) => {
   return {
     [ClientID]: {
@@ -132,14 +145,27 @@ var API = {
   UpdateTag,
   GetFrameIdsByATag,
   GetTagsByFrameId,
+  GetFrameByFrameId,
   Metadata
 };
 
 const CreateATagForACleanFrame = async (frame, tag, valueKey) => {
   const frameData = await miro.board.widgets.get({id: frame.id});
   const widget = await miro.board.widgets.create({
-    type: 'card', title: Tags.State.values.todo,
-    x: frameData[0].x, y: frameData[0].y
+    type: 'SHAPE', 
+    title: Tags.State.values.todo,
+    width: 200,
+    height: frameData[0].height,
+    x: frameData[0].x - frameData[0].width/2 + 100,
+    y: frameData[0].y,
+    style: {
+      backgroundColor: '#000',
+    },
+    // metadata: {
+    //   [ClientID]: {
+    //     frameId: frame.id
+    //   }
+    // }
   });
   frame.metadata = API.Metadata(tag, widget[0].id, valueKey);
   await miro.board.widgets.update(frame);
@@ -160,9 +186,21 @@ const CreateATagForAFrame = async (frame, tag, initValueKey) => {
   }
 };
 
+const DeleteFrame = async (frame) => {
+  const tags = await API.GetFrameByFrameId(frame.id);
+  for (const tag of tags) {
+    await miro.board.widgets.deleteById(frame.metadata[CLIENT_ID][`${tag}\$container`]);
+  }
+};
+
 var Action = {
   CreateATagForACleanFrame,
-  CreateATagForAFrame
+  CreateATagForAFrame,
+  DeleteFrame
+};
+
+const handleButtonClick = async () => {
+  miro.board.ui.openLeftSidebar('sidebar.html');
 };
 
 const initPlugin = async () => {
@@ -177,9 +215,7 @@ const initPlugin = async () => {
       bottomBar: {
         title: 'smart frame',
         svgIcon: icon24,
-        onClick: () => {
-          alert('Bottom bar item has been clicked');
-        }
+        onClick: handleButtonClick
       },
     }
   });
@@ -191,7 +227,14 @@ const initPlugin = async () => {
       );
     }
   });
-  // 调试用
+  Event.sub(Event.type.DeleteFrame, async (m) => {
+    for (const frame of m) {
+      Action.DeleteFrame(
+        frame
+      );
+    }
+  });
+  //调试用
   Event.sub(Event.type.SeletAFrame, async (m) => {
     for (const frame of m) {
       console.log(await miro.board.widgets.get({id: frame.id}));
