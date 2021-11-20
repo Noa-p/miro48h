@@ -1,4 +1,4 @@
-import { ClientID } from './config'
+import Store from './store'
 
 const ContainerKey = (tagName) => {
   return `${tagName}\$container`
@@ -8,13 +8,17 @@ const TagTextKey = (tagName) => {
   return `\$${tagName}`
 }
 
-const UpdateTag = () => {}
+const SetTag = (frameId, tag, containerWidgetId, valueKey, value) => {
+  return Store.set(frameId, Metadata(tag, containerWidgetId, valueKey, value))
+}
+const UpdateTag = (frameId, tag, updatedData) => {
+  // return Store.update(frameId, )
+}
 
 const GetFrameIdsByATag = () => {}
 
 const GetTagsByFrameId = async (frameId) => {
-  const frameData = await miro.board.widgets.get({id: frameId})
-  return frameData[0].metadata[ClientID]
+  return Store.get(frameId)
 }
 
 const GetFrameByFrameId = async (frameId) => {
@@ -26,16 +30,15 @@ const GetFrameByFrameId = async (frameId) => {
 
 const Metadata = (tag, containerWidgetId, valueKey, value) => {
   return {
-    [ClientID]: {
-      [tag.name]: valueKey,
-      [ContainerKey(tag.name)]: containerWidgetId,
-      [TagTextKey(tag.name)]: value === undefined ? tag.values[valueKey] : value
-    }
+    [tag.name]: valueKey,
+    [ContainerKey(tag.name)]: containerWidgetId,
+    [TagTextKey(tag.name)]: value === undefined ? tag.values[valueKey] : value
   }
 }
 export default {
   ContainerKey,
   TagTextKey,
+  SetTag,
   UpdateTag,
   GetFrameIdsByATag,
   GetTagsByFrameId,

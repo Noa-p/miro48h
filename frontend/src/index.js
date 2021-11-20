@@ -1,4 +1,3 @@
-import appIcon from './icon'
 import State from './state'
 import Event from './event'
 import Action from './action'
@@ -14,25 +13,16 @@ const initPlugin = async () => {
   State.frameTagsOn = true
   Event.init()
 
-  const icon24 = appIcon
-
-  await miro.initialize({
-    extensionPoints: {
-      bottomBar: {
-        title: 'smart frame',
-        svgIcon: icon24,
-        onClick: handleButtonClick
-      },
-    }
-  })
-
-  Event.sub(Event.type.CreateFrame, async (m) => {
-    for (const frame of m) {
+  /*
+  Event.sub(Event.type.CreateFrame, async (items) => {
+    for (const frame of items) {
       Action.CreateATagForACleanFrame(
         frame, Tags.State, 'todo'
       )
     }
   })
+  */
+  /*
   Event.sub(Event.type.DeleteFrame, async (m) => {
     for (const frame of m) {
       Action.DeleteFrame(
@@ -40,18 +30,27 @@ const initPlugin = async () => {
       )
     }
   })
+  */
+
   //调试用
-  Event.sub(Event.type.SeletAFrame, async (m) => {
-    for (const frame of m) {
-      console.log(await miro.board.widgets.get({id: frame.id}))
-      Action.CreateATagForAFrame(
+  Event.sub(Event.type.SelectFrames, async (items) => {
+    for (const frame of items) {
+      console.log(frame.id)
+      console.log(await miro.board.getAppData(frame.id))
+      await Action.CreateATagForAFrame(
         frame, Tags.State, 'todo'
       )
-      console.log(await miro.board.widgets.get({id: frame.id}))
+      console.log(await miro.board.getAppData(frame.id))
     }
   })
 }
 
+console.log('hello plugin loaded')
+miro.board.ui.on("icon:click", async () => {
+  console.log('icon clicked')
+  initPlugin()
+})
+/*
 miro.onReady(async () => {
   const authorized = await miro.isAuthorized()
   if (authorized) {
@@ -63,4 +62,4 @@ miro.onReady(async () => {
     }
   }
 })
-
+*/

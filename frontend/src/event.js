@@ -1,20 +1,10 @@
 import State from './state'
 
-const EventType = {
-  None: 0,
-  CreateFrame: 1, // 新创建了一个frame
-  UpdateFrameTitle: 2, // 无法实现，废弃
-  SeletAFrame: 3, // 选择了board上的一个frame
-  TagUpdated: 4, // tag被更新（实际上是metadata产生变化）
-  DeleteFrame: 5, // 删除frame
-  // 继续添加
-}
-
 class Manager {
-  constructor () {
-    this._event = EventType.None
+  constructor (eventType) {
+    this._event = null
     this.subs = {}
-    this.type = EventType
+    this.type = eventType
   }
   init () {
     EventRegister()
@@ -42,43 +32,83 @@ class Manager {
   }
 }
 
-const Event = new Manager()
+const EventType = {
+  None: 0,
+  CreateFrame: 1, // 新创建了一个frame
+  SelectFrames: 3, // 选择了board上的若干frame
+  ContainerUpdated: 4, // tag container被更新
+  DeleteFrame: 5, // 删除frame
+}
 
-const filter = (m, type) => m.data.filter(e => e.type === type)
+const Event = new Manager(EventType)
+
+const filter = (items, type) => items.filter(e => e.type === type)
+
+const diff = (a, b, type) => {
+  const createKVFromObjectArray = (arr) =>
+    arr.reduce((pre, cur) => {
+      pre[cur.id] = cur
+      return pre
+    }, {})
+  const mapA = createKVFromObjectArray(a)
+  const mapB = createKVFromObjectArray(b)
+  const complementA = []
+  const complementB = []
+  for (const elemOfA of a) {
+    if (mapB[elemOfA.id] == undefined) {
+      complementA.push(elemOfA)
+    }
+  }
+  for (const elemOfB of b) {
+    if (mapA[elemOfB.id] === undefined) {
+      complementB.push(elemOfB)
+      break
+    }
+  }
+  return {
+    a: filter(complementA, type),
+    b: filter(complementB, type)
+  }
+}
+
+let LastBoardNodes = null
+let LastSelectedItems = null
 
 const EventRegister = () => {
-  miro.addListener('SELECTION_UPDATED', m => {
-    const frameList = filter(m, 'FRAME')
-    if (frameList.length && State.frameTagsOn) {
-      Event.$emit(Event.type.SeletAFrame, frameList)
-    }
-  })
-  miro.addListener('WIDGETS_CREATED', m => {
-    const frameList = filter(m, 'FRAME')
-    if (frameList.length && State.frameTagsOn) {
-      Event.$emit(Event.type.CreateFrame, frameList)
-    }
-  })
-  miro.addListener('METADATA_CHANGED', m => {
-    const frameList = filter(m, 'FRAME')
-    if (frameList.length && State.frameTagsOn) {
-      Event.$emit(Event.type.TagUpdated, frameList)
-    }
-  })
-  miro.addListener('CANVAS_CLICKED', m => {
-  })
-  miro.addListener('WIDGETS_TRANSFORMATION_UPDATED', m => {
-  })
-  miro.addListener('WIDGETS_DELETED', async m => {
-    const frameList = []
-    for (const delWidget of m.data) {
-      const dw = await miro.board.widgets.get({id: delWidget.id})
-      if (dw.type == "FRAME") frameList.push(dw)
-    }
-    if (frameList.length && State.frameTagsOn) {
-      Event.$emit(Event.type.DeleteFrame, frameList)
-    } 
-  })
+  return setInterval(async () => {
+
+    if (!State.frameTagsOn) return
+
+    await miro.board.get()
+      .then(boardNodes => {
+        if (!LastBoardNodes) {
+          LastBoardNodes = boardNodes
+          return
+        }
+        const complement = diff(LastBoardNodes, boardNodes, 'frame')
+        if (complement.a.length > 0) {
+          Event.$emit(EventType.DeleteFrame, complement.a)
+        }
+        if (complement.b.length > 0) {
+          Event.$emit(EventType.CreateFrame, complement.b)
+        }
+        LastBoardNodes = boardNodes
+      })
+
+    await miro.board.getSelection()
+      .then(items => {
+        if (!LastSelectedItems) {
+          LastSelectedItems = items
+          return
+        }
+        const complement = diff(LastSelectedItems, items, 'frame')
+        if (complement.b.length > 0) {
+          Event.$emit(EventType.SelectFrames, complement.b)
+        }
+        LastSelectedItems = items
+      })
+
+  }, 1000)
 }
 
 export default Event

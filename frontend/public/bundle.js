@@ -2,27 +2,15 @@
 (function(l, r) { if (!l || l.getElementById('livereloadscript')) return; r = l.createElement('script'); r.async = 1; r.src = '//' + (self.location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1'; r.id = 'livereloadscript'; l.getElementsByTagName('head')[0].appendChild(r) })(self.document);
 'use strict';
 
-var appIcon = '<circle cx="12" cy="12" r="9" fill="none" fill-rule="evenodd" stroke="currentColor" stroke-width="2"/>';
-
 var State = {
   frameTagsOn: false
 };
 
-const EventType = {
-  None: 0,
-  CreateFrame: 1, // 新创建了一个frame
-  UpdateFrameTitle: 2, // 无法实现，废弃
-  SeletAFrame: 3, // 选择了board上的一个frame
-  TagUpdated: 4, // tag被更新（实际上是metadata产生变化）
-  DeleteFrame: 5, // 删除frame
-  // 继续添加
-};
-
 class Manager {
-  constructor () {
-    this._event = EventType.None;
+  constructor (eventType) {
+    this._event = null;
     this.subs = {};
-    this.type = EventType;
+    this.type = eventType;
   }
   init () {
     EventRegister();
@@ -50,43 +38,83 @@ class Manager {
   }
 }
 
-const Event = new Manager();
+const EventType = {
+  None: 0,
+  CreateFrame: 1, // 新创建了一个frame
+  SelectFrames: 3, // 选择了board上的若干frame
+  ContainerUpdated: 4, // tag container被更新
+  DeleteFrame: 5, // 删除frame
+};
 
-const filter = (m, type) => m.data.filter(e => e.type === type);
+const Event = new Manager(EventType);
+
+const filter = (items, type) => items.filter(e => e.type === type);
+
+const diff = (a, b, type) => {
+  const createKVFromObjectArray = (arr) =>
+    arr.reduce((pre, cur) => {
+      pre[cur.id] = cur;
+      return pre
+    }, {});
+  const mapA = createKVFromObjectArray(a);
+  const mapB = createKVFromObjectArray(b);
+  const complementA = [];
+  const complementB = [];
+  for (const elemOfA of a) {
+    if (mapB[elemOfA.id] == undefined) {
+      complementA.push(elemOfA);
+    }
+  }
+  for (const elemOfB of b) {
+    if (mapA[elemOfB.id] === undefined) {
+      complementB.push(elemOfB);
+      break
+    }
+  }
+  return {
+    a: filter(complementA, type),
+    b: filter(complementB, type)
+  }
+};
+
+let LastBoardNodes = null;
+let LastSelectedItems = null;
 
 const EventRegister = () => {
-  miro.addListener('SELECTION_UPDATED', m => {
-    const frameList = filter(m, 'FRAME');
-    if (frameList.length && State.frameTagsOn) {
-      Event.$emit(Event.type.SeletAFrame, frameList);
-    }
-  });
-  miro.addListener('WIDGETS_CREATED', m => {
-    const frameList = filter(m, 'FRAME');
-    if (frameList.length && State.frameTagsOn) {
-      Event.$emit(Event.type.CreateFrame, frameList);
-    }
-  });
-  miro.addListener('METADATA_CHANGED', m => {
-    const frameList = filter(m, 'FRAME');
-    if (frameList.length && State.frameTagsOn) {
-      Event.$emit(Event.type.TagUpdated, frameList);
-    }
-  });
-  miro.addListener('CANVAS_CLICKED', m => {
-  });
-  miro.addListener('WIDGETS_TRANSFORMATION_UPDATED', m => {
-  });
-  miro.addListener('WIDGETS_DELETED', async m => {
-    const frameList = [];
-    for (const delWidget of m.data) {
-      const dw = await miro.board.widgets.get({id: delWidget.id});
-      if (dw.type == "FRAME") frameList.push(dw);
-    }
-    if (frameList.length && State.frameTagsOn) {
-      Event.$emit(Event.type.DeleteFrame, frameList);
-    } 
-  });
+  return setInterval(async () => {
+
+    if (!State.frameTagsOn) return
+
+    await miro.board.get()
+      .then(boardNodes => {
+        if (!LastBoardNodes) {
+          LastBoardNodes = boardNodes;
+          return
+        }
+        const complement = diff(LastBoardNodes, boardNodes, 'frame');
+        if (complement.a.length > 0) {
+          Event.$emit(EventType.DeleteFrame, complement.a);
+        }
+        if (complement.b.length > 0) {
+          Event.$emit(EventType.CreateFrame, complement.b);
+        }
+        LastBoardNodes = boardNodes;
+      });
+
+    await miro.board.getSelection()
+      .then(items => {
+        if (!LastSelectedItems) {
+          LastSelectedItems = items;
+          return
+        }
+        const complement = diff(LastSelectedItems, items, 'frame');
+        if (complement.b.length > 0) {
+          Event.$emit(EventType.SelectFrames, complement.b);
+        }
+        LastSelectedItems = items;
+      });
+
+  }, 1000)
 };
 
 var Tags = {
@@ -104,7 +132,28 @@ var Tags = {
   }
 };
 
-const ClientID = process.env.CLIENT_ID;
+const SetAppData = (key, val) => {
+  return miro.board.setAppData(key, val)
+};
+
+const UpdateAppData = async (key, val) => {
+  const data = await GetAppData(key);
+  if (typeof data === 'object' && typeof val === 'object') {
+    Object.assign(data, val);
+    return SetAppData(key, data)
+  }
+  return SetAppData(key, val)
+};
+
+const GetAppData = (key) => {
+  return miro.board.getAppData(key)
+};
+
+var Store = {
+  set: SetAppData,
+  update: UpdateAppData,
+  get: GetAppData
+};
 
 const ContainerKey = (tagName) => {
   return `${tagName}\$container`
@@ -114,13 +163,17 @@ const TagTextKey = (tagName) => {
   return `\$${tagName}`
 };
 
-const UpdateTag = () => {};
+const SetTag = (frameId, tag, containerWidgetId, valueKey, value) => {
+  return Store.set(frameId, Metadata(tag, containerWidgetId, valueKey, value))
+};
+const UpdateTag = (frameId, tag, updatedData) => {
+  // return Store.update(frameId, )
+};
 
 const GetFrameIdsByATag = () => {};
 
 const GetTagsByFrameId = async (frameId) => {
-  const frameData = await miro.board.widgets.get({id: frameId});
-  return frameData[0].metadata[ClientID]
+  return Store.get(frameId)
 };
 
 const GetFrameByFrameId = async (frameId) => {
@@ -132,16 +185,15 @@ const GetFrameByFrameId = async (frameId) => {
 
 const Metadata = (tag, containerWidgetId, valueKey, value) => {
   return {
-    [ClientID]: {
-      [tag.name]: valueKey,
-      [ContainerKey(tag.name)]: containerWidgetId,
-      [TagTextKey(tag.name)]: value === undefined ? tag.values[valueKey] : value
-    }
+    [tag.name]: valueKey,
+    [ContainerKey(tag.name)]: containerWidgetId,
+    [TagTextKey(tag.name)]: value === undefined ? tag.values[valueKey] : value
   }
 };
 var API = {
   ContainerKey,
   TagTextKey,
+  SetTag,
   UpdateTag,
   GetFrameIdsByATag,
   GetTagsByFrameId,
@@ -149,40 +201,59 @@ var API = {
   Metadata
 };
 
+var MiroWrapper = {
+  createFrame (props) {
+    return miro.board.createFrame(props)
+      .then(frame => {
+        Event.$emit(Event.type.createFrame, frame);
+        return frame
+      })
+  },
+  createShapeContainer (props) {
+    return miro.board.createShape(props)
+      .then(shape => {
+        Event.$emit(Event.type.ContainerUpdated, shape);
+        return shape
+      })
+  },
+  createTextContainer (props) {
+    return miro.board.createText(props)
+      .then(text => {
+        Event.$emit(Event.type.ContainerUpdated, text);
+        return text
+      })
+  }
+};
+
 const CreateATagForACleanFrame = async (frame, tag, valueKey) => {
-  const frameData = await miro.board.widgets.get({id: frame.id});
-  const widget = await miro.board.widgets.create({
-    type: 'SHAPE', 
-    title: Tags.State.values.todo,
+  const container = await MiroWrapper.createShapeContainer({
+    shape: 'rectangle',
+    content: Tags.State.values.todo,
     width: 200,
-    height: frameData[0].height,
-    x: frameData[0].x - frameData[0].width/2 + 100,
-    y: frameData[0].y,
+    height: frame.height,
+    x: frame.x - frame.width/2 + 100,
+    y: frame.y,
     style: {
-      backgroundColor: '#000',
+      fillColor: '#000',
     },
-    // metadata: {
-    //   [ClientID]: {
-    //     frameId: frame.id
-    //   }
-    // }
   });
-  frame.metadata = API.Metadata(tag, widget[0].id, valueKey);
-  await miro.board.widgets.update(frame);
+  await frame.add(container);
+  return API.SetTag(frame.id, tag, container.id, valueKey)
 };
 
 const CreateATagForAFrame = async (frame, tag, initValueKey) => {
-  const tags = await API.GetTagsByFrameId(frame.id);
+  console.log(frame.id);
+  const tags = await miro.board.getAppData(frame.id); //await API.GetTagsByFrameId(frame.id)
   if (!tags || !tags[tag.name]) {
-    CreateATagForACleanFrame(frame, tag, initValueKey);
-    return
+    console.log(tags[tag.name]);
+    return CreateATagForACleanFrame(frame, tag, initValueKey)
   }
   const containerId = tags[API.ContainerKey(tag.name)];
   console.log('containerId', containerId);
   // 如果 container 被删除，创建一个新的 container
-  const container = await miro.board.widgets.get({id: containerId});
+  const container = await miro.board.get({id: containerId});
   if (container.length === 0) {
-    CreateATagForACleanFrame(frame, tag, tags[tag.name]);
+    return CreateATagForACleanFrame(frame, tag, tags[tag.name])
   }
 };
 
@@ -199,61 +270,58 @@ var Action = {
   DeleteFrame
 };
 
-const handleButtonClick = async () => {
-  miro.board.ui.openLeftSidebar('sidebar.html');
-};
-
 const initPlugin = async () => {
 
   State.frameTagsOn = true;
   Event.init();
 
-  const icon24 = appIcon;
-
-  await miro.initialize({
-    extensionPoints: {
-      bottomBar: {
-        title: 'smart frame',
-        svgIcon: icon24,
-        onClick: handleButtonClick
-      },
-    }
-  });
-
-  Event.sub(Event.type.CreateFrame, async (m) => {
-    for (const frame of m) {
+  /*
+  Event.sub(Event.type.CreateFrame, async (items) => {
+    for (const frame of items) {
       Action.CreateATagForACleanFrame(
         frame, Tags.State, 'todo'
-      );
+      )
     }
-  });
+  })
+  */
+  /*
   Event.sub(Event.type.DeleteFrame, async (m) => {
     for (const frame of m) {
       Action.DeleteFrame(
         frame
-      );
+      )
     }
-  });
+  })
+  */
+
   //调试用
-  Event.sub(Event.type.SeletAFrame, async (m) => {
-    for (const frame of m) {
-      console.log(await miro.board.widgets.get({id: frame.id}));
-      Action.CreateATagForAFrame(
+  Event.sub(Event.type.SelectFrames, async (items) => {
+    for (const frame of items) {
+      console.log(frame.id);
+      console.log(await miro.board.getAppData(frame.id));
+      await Action.CreateATagForAFrame(
         frame, Tags.State, 'todo'
       );
-      console.log(await miro.board.widgets.get({id: frame.id}));
+      console.log(await miro.board.getAppData(frame.id));
     }
   });
 };
 
+console.log('hello plugin loaded');
+miro.board.ui.on("icon:click", async () => {
+  console.log('icon clicked');
+  initPlugin();
+});
+/*
 miro.onReady(async () => {
-  const authorized = await miro.isAuthorized();
+  const authorized = await miro.isAuthorized()
   if (authorized) {
-    initPlugin();
+    initPlugin()
   } else {
-    const res = await miro.board.ui.openModal('not-authorized.html');
+    const res = await miro.board.ui.openModal('not-authorized.html')
     if (res === 'success') {
-      initPlugin();
+      initPlugin()
     }
   }
-});
+})
+*/
