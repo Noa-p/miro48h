@@ -439,10 +439,10 @@ const initPlugin = async () => {
   await miro.board.setAppData('456', {
     bob: 'alice'
   });
-  console.log(await miro.board.getAppData('456'));
-  setTimeout(async () => {
-    console.log(await miro.board.getAppData('456'));
-  }, 2000);
+  console.log(await miro.board.getAppData('456')); // setTimeout(async () => {
+  //   console.log(await miro.board.getAppData('456'))
+  // },2000)
+
   await miro.board.ui.openPanel({
     pageUrl: 'panel.html',
     maxHeight: 420
