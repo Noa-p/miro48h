@@ -54,3 +54,11 @@ Event.sub(Event.type.CreateFrame, async (m) => {
   }
 })
 ```
+
+# Thanks
+
+Our team work record:
+
+![截图留念](https://user-images.githubusercontent.com/80361883/142756765-75ee32e7-57f8-4a30-8d84-84ade4fd867c.PNG)
+
+Thanks for everyone!
