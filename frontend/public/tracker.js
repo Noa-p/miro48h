@@ -17486,9 +17486,9 @@ class Tracker extends React.Component {
         const frame = _.cloneDeep(res[frameid]);
 
         frame.frameid = frameid;
-        const owner = res[frameid]["Owner"];
+        const owner = res[frameid]["_Owner"];
         const state = res[frameid]["State"];
-        console.log(owner, state);
+        console.log(res[frameid], owner, state);
 
         if (owner in data) {
           if (state in data[owner]) {
@@ -17522,7 +17522,7 @@ class Tracker extends React.Component {
         className: "ownerWrapper"
       }, /*#__PURE__*/React.createElement("div", {
         className: "ownerTitle"
-      }, "owner | ", count(allData[owner]) || 0), /*#__PURE__*/React.createElement("div", {
+      }, owner, " | ", count(allData[owner]) || 0), /*#__PURE__*/React.createElement("div", {
         className: "diver"
       }), /*#__PURE__*/React.createElement("div", {
         key: owner,

@@ -376,16 +376,19 @@ var Action = {
 const tags = [//{name: 'assign', bgColor: '#000'},
 {
   name: 'todo',
-  title: 'To Do',
+  title: 'TO DO',
   bgColor: '#BDBDBD'
 }, {
   name: 'inprocess',
+  title: 'IN PROCESS',
   bgColor: '#FAC710'
 }, {
   name: 'done',
+  title: 'DONE',
   bgColor: '#2D9BF0'
 }, {
   name: 'undermodified',
+  title: 'MODIFYING',
   bgColor: '#F24726'
 }];
 
@@ -431,7 +434,7 @@ const App = () => {
         }, frame, '', name);
       }
     }
-  }, /*#__PURE__*/React.createElement("p", null, "assign")), tags.map(i => {
+  }, /*#__PURE__*/React.createElement("p", null, "ASSIGN")), tags.map(i => {
     return /*#__PURE__*/React.createElement("div", {
       key: i.name,
       className: "tag",
@@ -454,7 +457,7 @@ const App = () => {
           }, frame, i.name);
         }
       }
-    }, /*#__PURE__*/React.createElement("p", null, i.name));
+    }, /*#__PURE__*/React.createElement("p", null, i.title));
   })), /*#__PURE__*/React.createElement("div", {
     className: "diver"
   }), /*#__PURE__*/React.createElement("div", {
