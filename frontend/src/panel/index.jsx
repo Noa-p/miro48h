@@ -7,10 +7,10 @@ import Event from '../event'
 
 const tags = [
     //{name: 'assign', bgColor: '#000'},
-    {name: 'todo', title: 'To Do', bgColor: '#BDBDBD'},
-    {name: 'inprocess',bgColor: '#FAC710'},
-    {name: 'done',bgColor: '#2D9BF0'},
-    {name: 'undermodified',bgColor: '#F24726'},
+    {name: 'todo', title: 'TO DO', bgColor: '#BDBDBD'},
+    {name: 'inprocess',title: 'IN PROCESS',bgColor: '#FAC710'},
+    {name: 'done',title: 'DONE',bgColor: '#2D9BF0'},
+    {name: 'undermodified',title: 'MODIFYING',bgColor: '#F24726'},
 ]
 
 const App = () => {
@@ -53,7 +53,7 @@ const App = () => {
           }
         }
         >
-          <p>assign</p>
+          <p>ASSIGN</p>
         </div>
         {
           tags.map(i => {
@@ -81,7 +81,7 @@ const App = () => {
               }
             }
             >
-              <p>{i.name}</p>
+              <p>{i.title}</p>
             </div>
           })
         }
