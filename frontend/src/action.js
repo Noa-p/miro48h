@@ -4,7 +4,6 @@ import MiroWrapper from './MiroSDKWrapper'
 
 const CreateATagForACleanFrame = async (containerStyle, frame, tag, valueKey, value) => {
   const container = await MiroWrapper.createShapeContainer({
-    shape: 'rectangle',
     content: value || tag.values[valueKey],
     width: 200,
     height: frame.height,
@@ -15,7 +14,7 @@ const CreateATagForACleanFrame = async (containerStyle, frame, tag, valueKey, va
     },
     ...containerStyle
   })
-  await frame.add(container)
+  await frame.add(container).catch(e => console.log(e))
   return API.UpdateTag(frame.id, tag, container.id, valueKey, value)
 }
 
@@ -29,6 +28,7 @@ const CreateATagForAFrame = async (containerStyle, frame, tag, initValueKey, ini
   console.log('containerId', containerId)
   // 如果 container 被删除，创建一个新的 container
   const container = await miro.board.get({id: containerId})
+    .catch(() => [])
   if (container.length === 0) {
     return CreateATagForACleanFrame(containerStyle, frame, tag, tags[tag.name], tags[API.TagTextKey(tag.name)])
   }
@@ -36,10 +36,15 @@ const CreateATagForAFrame = async (containerStyle, frame, tag, initValueKey, ini
 
 const DeleteATagFromAFrame = async (frame, tag) => {
   const tags = await API.GetTagsByFrameId(frame.id)
+  console.log('tags: ', tags)
+  if (!tags) return
   const containerId = tags[API.ContainerKey(tag.name)]
+  console.log('containerId', containerId)
   const container = await miro.board.get({id: containerId})
+    .catch(() => [])
+  console.log(container)
   if (container.length !== 0) {
-    await miro.board.remove(container)
+    await miro.board.remove(container[0]).catch((e) => console.log(e))
   }
   return API.UpdateTag(frame.id, tag, null, null, null)
 }

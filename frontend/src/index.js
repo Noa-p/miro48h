@@ -11,18 +11,9 @@ const handleButtonClick = async () => {
 
 const initPlugin = async () => {
 
-  console.log(await Store.getall())
-  console.log(await Action.GenTrackerData())
   State.frameTagsOn = true
   Event.init()
 
-  await miro.board.setAppData('123', 123)
-  console.log(await miro.board.getAppData('123'))
-  await miro.board.setAppData('456', {bob: 'alice'})
-  console.log(await miro.board.getAppData('456'))
-  // setTimeout(async () => {
-  //   console.log(await miro.board.getAppData('456'))
-  // },2000)
   await miro.board.ui.openPanel({
     pageUrl: 'panel.html',
     maxHeight: 420,
@@ -47,6 +38,7 @@ const initPlugin = async () => {
   */
 
   //调试用
+  /*
   Event.sub(Event.type.SelectFrames, async (items) => {
     for (const frame of items) {
       console.log(frame.id)
@@ -68,6 +60,7 @@ const initPlugin = async () => {
       )
     }
   })
+  */
 }
 
 console.log('hello plugin loaded')

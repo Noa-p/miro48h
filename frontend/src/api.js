@@ -30,6 +30,14 @@ const GetFrameByFrameId = async (frameId) => {
   return frameData
 }
 
+const GetSelectionFrames = () => {
+  const filter = (items, type) => items.filter(e => e.type === type)
+  return miro.board.getSelection()
+    .then(items => {
+      return filter(items, 'frame')
+    })
+}
+
 const Metadata = (tag, containerWidgetId, valueKey, value) => {
   return {
     [tag.name]: valueKey,
@@ -50,5 +58,6 @@ export default {
   GetTagsByFrameId,
   GetFrameByFrameId,
   Metadata,
-  GetAllData
+  GetAllData,
+  GetSelectionFrames
 }
