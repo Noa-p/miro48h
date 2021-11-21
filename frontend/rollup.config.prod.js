@@ -3,8 +3,6 @@ import { terser } from 'rollup-plugin-terser'
 import image from '@rollup/plugin-image'
 import styles from "rollup-plugin-styles";
 import { babel } from '@rollup/plugin-babel'
-import image from '@rollup/plugin-image'
-import styles from "rollup-plugin-styles"
 import resolve from 'rollup-plugin-node-resolve'
 import commonjs from '@rollup/plugin-commonjs'
 import * as dotenv from 'dotenv'
@@ -28,7 +26,7 @@ export default [{
 		json()
 	]
 }, {
-	input: 'src/panel/index.js',
+	input: 'src/panel/index.jsx',
 	output: [{
 		file: 'public/panel.js',
 		format: 'cjs',
