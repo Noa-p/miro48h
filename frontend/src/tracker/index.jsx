@@ -56,9 +56,9 @@ class Tracker extends React.Component {
           Object.keys(res).map(frameid => {
               const frame = _.cloneDeep(res[frameid])
               frame.frameid = frameid
-              const owner = res[frameid]["Owner"]
+              const owner = res[frameid]["_Owner"]
               const state = res[frameid]["State"]
-              console.log(owner, state)
+              console.log(res[frameid],owner, state)
               if (owner in data) {
                   if (state in data[owner]) {
                       data[owner][state].push(res[frameid])
@@ -90,7 +90,7 @@ class Tracker extends React.Component {
             Object.keys(allData).map(owner => {
               return (
                 <div className='ownerWrapper'>
-                <div className='ownerTitle'>owner | {count(allData[owner]) || 0}</div>
+                <div className='ownerTitle'>{owner} | {count(allData[owner]) || 0}</div>
                 <div className='diver'></div>
                 <div key={owner} className='owner'>
                     {
