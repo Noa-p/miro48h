@@ -1,0 +1,23 @@
+name: deploy miro48h
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v2
+        with:
+          persist-credentials: false
+      - name: Install and Build 🔧 
+        run:
+          cd frontend && npm install && npm run build
+      - name: Deploy 🚀
+        uses: JamesIves/github-pages-deploy-action@releases/v3
+        with:
+          GITHUB_TOKEN: ${{ secrets.DEPLOYTOKEN }}
+          FOLDER: frontend/public
+          BRANCH: gh-pages
