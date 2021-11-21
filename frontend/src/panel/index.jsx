@@ -26,12 +26,14 @@ const App = () => {
     <div className="app">
       <div className='header'></div>
       <div className='tags'>
-        <input  />
+        <input id="assign_name" name="assign_name" type="text"/>
         <div
           key='assign'
           className='tag'
           style={{backgroundColor:'#000'}}
           onClick={async () => {
+            const name = document.getElementById('assign_name').value
+            console.log(name)
             const frames = await API.GetSelectionFrames()
             for (const frame of frames) {
               Action.UpdateOwnerForAFrame(
@@ -44,7 +46,7 @@ const App = () => {
                     fillColor: '#ccc'
                   }
                 },
-                frame, '', 'mengru(ownerName)' 
+                frame, '', name 
               )
             }
           }

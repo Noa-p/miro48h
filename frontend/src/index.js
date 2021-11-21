@@ -16,7 +16,7 @@ const initPlugin = async () => {
 
   await miro.board.ui.openPanel({
     pageUrl: 'panel.html',
-    maxHeight: 420,
+    maxHeight: 430,
   })
   /*
   Event.sub(Event.type.CreateFrame, async (items) => {

@@ -25,6 +25,7 @@
     width: 260px;
     height: 40px;
     border-radius: 5px;
+    cursor: pointer;
 }
 .tag p {
     line-height: 1em;
