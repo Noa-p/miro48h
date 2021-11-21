@@ -13,8 +13,11 @@ const tags = [
 const App = () => {
 
   const handleTrackerVisible = async () => {
-    miro.board.ui.closePanel()
-    await miro.board.ui.openPanel('tracker.html', 800)
+    await miro.board.ui.closePanel()
+    await miro.board.ui.openPanel({
+      pageUrl: 'tracker.html',
+      maxHeight: 800,
+    })
   }
 
   return (

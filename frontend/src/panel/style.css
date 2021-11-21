@@ -41,6 +41,7 @@
     text-align: center;
     width: 260px;
     border-radius: 5px;
+    cursor: pointer;
 }
 .tracker p {
     line-height: 1em;
