@@ -23,6 +23,10 @@ const initPlugin = async () => {
   setTimeout(async () => {
     console.log(await miro.board.getAppData('456'))
   },2000)
+  await miro.board.ui.openPanel({
+    pageUrl: 'panel.html',
+    maxHeight: 420,
+  })
   /*
   Event.sub(Event.type.CreateFrame, async (items) => {
     for (const frame of items) {

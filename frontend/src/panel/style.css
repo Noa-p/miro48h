@@ -1,0 +1,50 @@
+.btn {
+    width: 100px;
+}
+
+.app {
+    display: flex;
+    align-items: center;
+    align-content: center;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.tags {
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    align-items: center;
+    align-content: center;
+}
+
+.tag {
+    margin: 8px;
+    text-align: center;
+    width: 260px;
+    height: 40px;
+    border-radius: 5px;
+}
+.tag p {
+    line-height: 1em;
+    font-weight: bold;
+}
+
+.diver {
+    border-top: 1px solid rgb(196, 196, 196);
+    width: 90%;
+    margin: 30 10 10 20;
+}
+
+.tracker {
+    text-align: center;
+    width: 260px;
+    border-radius: 5px;
+}
+.tracker p {
+    line-height: 1em;
+    font-weight: bold;
+    font-size: 20px;
+    color: #888;
+}
