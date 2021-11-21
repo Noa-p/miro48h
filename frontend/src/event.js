@@ -109,7 +109,7 @@ const EventRegister = () => {
         LastSelectedItems = items
       })
 
-  }, 1000)
+  }, 800)
 }
 
 export default Event

@@ -44,6 +44,7 @@ const EventType = {
   SelectFrames: 3, // 选择了board上的若干frame
   ContainerUpdated: 4, // tag container被更新
   DeleteFrame: 5, // 删除frame
+  TagsUpdated: 6
 };
 
 const Event = new Manager(EventType);
@@ -114,7 +115,7 @@ const EventRegister = () => {
         LastSelectedItems = items;
       });
 
-  }, 1000)
+  }, 800)
 };
 
 var Tags = {
@@ -130,6 +131,11 @@ var Tags = {
   Owner: {
     name: 'Owner'
   }
+};
+
+var Config = {
+  ClientID: '3074457367848344047',
+  dataStoreKey: '6199a73b83ad7a74a1c3ef05'
 };
 
 /*
@@ -158,14 +164,54 @@ const GetAppData = (key) => {
 */
 
 // In Memory for debug
-const Memory = {};
+/*
+const Memory = {}
 const SetAppData = (key, val) => {
-  Memory[key] = val;
+  Memory[key] = val
   return val
-};
+}
 
 const UpdateAppData = (key, val) => {
-  const data = GetAppData(key);
+  const data = GetAppData(key)
+  if (typeof data === 'object' && typeof val === 'object') {
+    Object.assign(data, val)
+    return SetAppData(key, data)
+  }
+  return SetAppData(key, val)
+}
+
+const GetAppData = (key) => {
+  return Memory[key]
+}
+
+const GetAllAppData = () => {
+  return Memory
+}
+*/
+
+// use lencloude
+const API$1 = 'https://xxantash.lc-cn-n1-shared.com';
+const AppID = 'xxANTAShS739RtzLBQywDMMu-gzGzoHsz';
+const AppKey = 'MaxXf4hdaoRRBQFxJenariKt';
+const headers = {
+  'X-LC-Id': AppID,
+  'X-LC-Key': AppKey,
+  'Content-Type': 'application/json'
+};
+
+const SetAppData = async (key, val) => {
+  const url = API$1 + '/1.1/classes/appData/' + Config.dataStoreKey;
+  const allData = await GetAllAppData();
+  allData[key] = val;
+  return fetch(url, {
+    body: `{"data": ${JSON.stringify(allData)}}`,
+    headers,
+    method: 'PUT'
+  }).then(res => res.json())
+};
+
+const UpdateAppData = async (key, val) => {
+  const data = await GetAppData(key);
   if (typeof data === 'object' && typeof val === 'object') {
     Object.assign(data, val);
     return SetAppData(key, data)
@@ -173,14 +219,19 @@ const UpdateAppData = (key, val) => {
   return SetAppData(key, val)
 };
 
-const GetAppData = (key) => {
-  return Memory[key]
+const GetAppData = async (key) => {
+  const allData = await GetAllAppData();
+  return allData[key]
 };
 
-const GetAllAppData = () => {
-  return Memory
+const GetAllAppData = async () => {
+  const url = API$1 + '/1.1/classes/appData/' + Config.dataStoreKey;
+  return fetch(url, {
+    headers,
+    method: 'GET'
+  }).then(res => res.json())
+  .then(res => res.data)
 };
-
 
 var Store = {
   set: SetAppData,
@@ -190,15 +241,19 @@ var Store = {
 };
 
 const ContainerKey = (tagName) => {
-  return `${tagName}\$container`
+  return `${tagName}_container`
 };
 
 const TagTextKey = (tagName) => {
-  return `\$${tagName}`
+  return `_${tagName}`
 };
 
 const UpdateTag = (frameId, tag, containerWidgetId, valueKey, value) => {
   return Store.update(frameId, Metadata(tag, containerWidgetId, valueKey, value))
+    .then((data) => {
+      Event.$emit(Event.type.TagsUpdated, data);
+      return data
+    })
 };
 
 const GetFrameIdsByATag = () => {};
@@ -261,10 +316,10 @@ var MiroWrapper = {
   }
 };
 
-const CreateATagForACleanFrame = async (frame, tag, valueKey) => {
+const CreateATagForACleanFrame = async (containerStyle, frame, tag, valueKey, value) => {
   const container = await MiroWrapper.createShapeContainer({
     shape: 'rectangle',
-    content: Tags.State.values.todo,
+    content: value || tag.values[valueKey],
     width: 200,
     height: frame.height,
     x: frame.x - frame.width/2 + 100,
@@ -272,23 +327,24 @@ const CreateATagForACleanFrame = async (frame, tag, valueKey) => {
     style: {
       fillColor: '#000',
     },
+    ...containerStyle
   });
   await frame.add(container);
-  return API.UpdateTag(frame.id, tag, container.id, valueKey)
+  return API.UpdateTag(frame.id, tag, container.id, valueKey, value)
 };
 
-const CreateATagForAFrame = async (frame, tag, initValueKey) => {
+const CreateATagForAFrame = async (containerStyle, frame, tag, initValueKey, initValue) => {
   const tags = await API.GetTagsByFrameId(frame.id);
   console.log(tags);
   if (!tags || !tags[tag.name]) {
-    return CreateATagForACleanFrame(frame, tag, initValueKey)
+    return CreateATagForACleanFrame(containerStyle, frame, tag, initValueKey, initValue)
   }
   const containerId = tags[API.ContainerKey(tag.name)];
   console.log('containerId', containerId);
   // 如果 container 被删除，创建一个新的 container
   const container = await miro.board.get({id: containerId});
   if (container.length === 0) {
-    return CreateATagForACleanFrame(frame, tag, tags[tag.name])
+    return CreateATagForACleanFrame(containerStyle, frame, tag, tags[tag.name], tags[API.TagTextKey(tag.name)])
   }
 };
 
@@ -302,14 +358,59 @@ const DeleteATagFromAFrame = async (frame, tag) => {
   return API.UpdateTag(frame.id, tag, null, null, null)
 };
 
+const UpdateOwnerForAFrame = async (containerStyle, frame, ownerId, ownerName) => {
+  await DeleteATagFromAFrame(frame, Tags.Owner);
+  await CreateATagForAFrame(containerStyle, frame, Tags.Owner, ownerId, ownerName);
+};
+
+const UpdateStateForAFrame = async (containerStyle, frame, state) => {
+  await DeleteATagFromAFrame(frame, Tags.State);
+  await CreateATagForAFrame(containerStyle, frame, Tags.State, state);
+};
+
+const GenTrackerData = async () => {
+  const data = await API.GetAllData();
+  const res = [];
+  const allFramesId = Object.keys(data);
+  const validFramesId = allFramesId.filter(
+    frameId =>
+      data[frameId][Tags.State.name]
+      && data[frameId][Tags.Owner.name]
+  );
+  let framesData = await miro.board.get({id: validFramesId});
+  framesData = framesData.reduce((pre, cur) => {
+    pre[cur.id] = cur;
+    return pre
+  }, {});
+  validFramesId.forEach(frameId => {
+    res.push({
+      frameData: framesData[frameId],
+      state: {
+        type: data[frameId][Tags.State.name],
+        text: data[frameId][API.TagTextKey(Tags.State.name)]
+      },
+      owner: {
+        id: data[frameId][Tags.Owner.name],
+        name: data[frameId][API.TagTextKey(Tags.Owner.name)]
+      }
+    });
+  });
+  return res
+};
+
 var Action = {
   CreateATagForACleanFrame,
   CreateATagForAFrame,
-  DeleteATagFromAFrame
+  DeleteATagFromAFrame,
+  GenTrackerData,
+  UpdateOwnerForAFrame,
+  UpdateStateForAFrame,
 };
 
 const initPlugin = async () => {
 
+  console.log(await Store.getall());
+  console.log(await Action.GenTrackerData());
   State.frameTagsOn = true;
   Event.init();
 
@@ -345,7 +446,19 @@ const initPlugin = async () => {
       console.log(frame.id);
       // console.log(await miro.board.getAppData(frame.id))
       await Action.CreateATagForAFrame(
+        {
+          height: 50
+        },
         frame, Tags.State, 'todo'
+      );
+      await Action.CreateATagForAFrame(
+        {
+          height: 50,
+          style: {
+            fillColor: '#b22222',
+          },
+        },
+        frame, Tags.Owner, '<userId>', 'mengru'
       );
     }
   });

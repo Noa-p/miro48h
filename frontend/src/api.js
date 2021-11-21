@@ -2,11 +2,11 @@ import Store from './store'
 import Event from './event'
 
 const ContainerKey = (tagName) => {
-  return `${tagName}\$container`
+  return `${tagName}_container`
 }
 
 const TagTextKey = (tagName) => {
-  return `\$${tagName}`
+  return `_${tagName}`
 }
 
 const UpdateTag = (frameId, tag, containerWidgetId, valueKey, value) => {
