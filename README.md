@@ -4,7 +4,7 @@
 
 Clone this repo and enter `frontend/`, run commands:
 ```
-npm i && npm run build
+npm i && npm run dev
 ```
 you can run a server listening port `8082` in your local.
 
