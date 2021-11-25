@@ -4,6 +4,8 @@ import './style.css'
 import Action from '../action'
 import Tags from '../tag.def'
 import Event from '../event'
+import React from 'react'
+import ReactDOM from 'react-dom'
 
 const tags = [
     //{name: 'assign', bgColor: '#000'},

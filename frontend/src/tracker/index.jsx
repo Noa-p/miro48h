@@ -2,6 +2,8 @@ import MiroSDKWrapper from "../MiroSDKWrapper"
 import API from '../api'
 import './style.css'
 import _ from 'lodash'
+import React from 'react'
+import ReactDOM from 'react-dom'
 
 const count = (ownerData) => {
   let ct = 0

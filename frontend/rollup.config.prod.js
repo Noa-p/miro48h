@@ -2,8 +2,9 @@ import json from '@rollup/plugin-json'
 import { terser } from 'rollup-plugin-terser'
 import image from '@rollup/plugin-image'
 import styles from "rollup-plugin-styles";
-import { babel } from '@rollup/plugin-babel'
-import resolve from 'rollup-plugin-node-resolve'
+import babel from '@rollup/plugin-babel'
+import replace from '@rollup/plugin-replace'
+import resolve from '@rollup/plugin-node-resolve'
 import commonjs from '@rollup/plugin-commonjs'
 import * as dotenv from 'dotenv'
 
@@ -11,25 +12,32 @@ dotenv.config()
 
 export default [{
 	input: 'src/index.js',
-	external: ['react'],
+	external: ['react','lodash'],
 	output: [{
 		file: 'public/bundle.js',
-		format: 'cjs'
+		format: 'iife'
 	}],
 	plugins: [
 		babel({
 			presets: ["@babel/preset-react"],
-			exclude: 'node_modules/**'
+			exclude: 'node_modules/**',
+			babelHelpers: 'bundled'
+		}),
+		replace({
+			'process.env.NODE_ENV': JSON.stringify('production'),
+			preventAssignment: true,
 		}),
 		image(),
 		styles(),
-		json()
+		json(),
+		commonjs(),
+		resolve()
 	]
 }, {
 	input: 'src/panel/index.jsx',
 	output: [{
 		file: 'public/panel.js',
-		format: 'cjs',
+		format: 'iife',
 		globals: {
 			react: 'React'
 		}
@@ -37,17 +45,24 @@ export default [{
 	plugins: [
 		babel({
 			presets: ["@babel/preset-react"],
-			exclude: 'node_modules/**'
+			exclude: 'node_modules/**',
+			babelHelpers: 'bundled'
+		}),
+		replace({
+			'process.env.NODE_ENV': JSON.stringify('production'),
+			preventAssignment: true,
 		}),
 		image(),
 		styles(),
-		json()
+		json(),
+		commonjs(),
+		resolve()
 	]
 }, {
 	input: 'src/tracker/index.jsx',
 	output: [{
 		file: 'public/tracker.js',
-		format: 'cjs',
+		format: 'iife',
 		globals: {
 			react: 'React'
 		}
@@ -55,7 +70,12 @@ export default [{
 	plugins: [
 		babel({
 			presets: ["@babel/preset-react"],
-			exclude: 'node_modules/**'
+			exclude: 'node_modules/**',
+			babelHelpers: 'bundled'
+		}),
+		replace({
+			'process.env.NODE_ENV': JSON.stringify('production'),
+			preventAssignment: true,
 		}),
 		image(),
 		styles(),
