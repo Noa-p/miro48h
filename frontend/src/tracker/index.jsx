@@ -87,15 +87,15 @@ class Tracker extends React.Component {
       <div className="tracker">
         <div className="container">
           {
-            Object.keys(allData).map(owner => {
+            Object.keys(allData).map((owner, index) => {
               return (
-                <div className='ownerWrapper'>
+                <div className='ownerWrapper' key={owner+'_'+index}>
                 <div className='ownerTitle'>{owner} | {count(allData[owner]) || 0}</div>
                 <div className='diver'></div>
                 <div key={owner} className='owner'>
                     {
                       Object.keys(allData[owner]).map(state => {
-                        return <div key={state} className="state">
+                        return <div key={owner+'_'+state} className="state">
                           {allData[owner][state].map(frame => {
                             return <div key={owner+'_'+state+'_'+frame.frameid} className={`preview-${frame.State}`}></div>
                           })}
